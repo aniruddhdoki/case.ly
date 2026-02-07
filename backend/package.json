@@ -1,0 +1,22 @@
+{
+  "name": "case-ly-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon -r ./preload.cjs server.js",
+    "start": "node -r ./preload.cjs server.js",
+    "run": "npm install && node -r ./preload.cjs server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "node-pre-gyp": "^0.17.0",
+    "openai": "^4.73.0",
+    "wrtc": "^0.4.7",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
