@@ -19,7 +19,8 @@ resource "aws_iam_policy" "casey_backend" {
         Effect = "Allow"
         Action = [
           "bedrock:InvokeModel",
-          "bedrock:InvokeModelWithResponseStream"
+          "bedrock:InvokeModelWithResponseStream",
+          "bedrock:GetInferenceProfile"
         ]
         Resource = "*"
       },
@@ -57,12 +58,12 @@ resource "aws_iam_policy" "casey_backend" {
   })
 }
 
-# Attach policy to existing local development service account
-data "aws_iam_user" "casey_localdev_service" {
-  user_name = "casey_localdev_service"
+# Attach policy to existing service account (IAM user)
+data "aws_iam_user" "service_account" {
+  user_name = var.service_account_iam_user_name
 }
 
-resource "aws_iam_user_policy_attachment" "casey_localdev_service" {
-  user       = data.aws_iam_user.casey_localdev_service.user_name
+resource "aws_iam_user_policy_attachment" "service_account" {
+  user       = data.aws_iam_user.service_account.user_name
   policy_arn = aws_iam_policy.casey_backend.arn
 }

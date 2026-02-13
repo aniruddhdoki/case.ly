@@ -10,7 +10,7 @@ output "policy_arn" {
 
 output "credentials_instructions" {
   description = "Instructions for configuring credentials"
-  value       = "Use casey_localdev_service credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY). Set AWS_REGION=${var.aws_region} in .env"
+  value       = "Use ${var.service_account_iam_user_name} credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY). Set AWS_REGION=${var.aws_region} in .env"
 }
 
 output "cloudwatch_log_group" {

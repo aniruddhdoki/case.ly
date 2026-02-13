@@ -1,15 +1,26 @@
 # Terraform: casey AWS Resources
 
-Provisions IAM policy and attaches it to `casey_localdev_service` for backend development.
+Provisions IAM policy and CloudWatch log group, and attaches the policy to a configurable service account for backend development.
+
+## Admin vs Service Account
+
+Terraform uses two distinct AWS principals:
+
+| Account | Purpose | When used |
+|---------|---------|-----------|
+| **Admin account** | Runs `terraform plan` and `terraform apply`; creates IAM policies, attaches to users, creates CloudWatch resources | Only when applying Terraform |
+| **Service account** | Runs the casey backend at runtime; calls Transcribe, Bedrock, Polly, CloudWatch Logs | Only when the backend is running |
+
+**Important:** The service account must never be used to run Terraform. The admin account must never be used by the backend. Keep these credentials separate.
 
 ## Prerequisites
 
 - Terraform installed
-- AWS CLI configured with credentials for a principal that can create IAM policies and attach them to users (e.g. your admin IAM user)
+- AWS CLI configured with credentials for a principal that can create IAM policies, attach them to users, and create CloudWatch log groups (your admin IAM user)
 
 ## Configure AWS credentials for Terraform
 
-Use your admin IAM user credentials when running Terraform. Choose one:
+Use your **admin** IAM user credentials when running Terraform. Choose one:
 
 ### Option A: .env file (recommended for local development)
 
@@ -69,20 +80,23 @@ terraform apply   # Type 'yes' to confirm
 
 ## What gets created
 
-- **IAM policy** `casey-backend-ai` – Transcribe, Bedrock, Polly permissions
-- **Policy attachment** – Attached to existing user `casey_localdev_service`
+- **IAM policy** `casey-backend-ai` – Transcribe, Bedrock, Polly, CloudWatch Logs permissions (including `bedrock:GetInferenceProfile` for inference profiles)
+- **Policy attachment** – Attached to the service account IAM user (default: `casey_localdev_service`)
+- **CloudWatch log group** `casey-backend-aws-usage`
 
-The `casey_localdev_service` IAM user must already exist. Terraform does not create it.
+The service account IAM user must already exist. Terraform does not create it. Override the default with `-var="service_account_iam_user_name=your_service_user"` if needed.
 
 ## Local development (backend)
 
-After `terraform apply`, use `casey_localdev_service` credentials to run the backend:
+After `terraform apply`, run the backend with the **service account** credentials (not the admin credentials):
 
 ```bash
 # In backend/.env or environment
 AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=<casey_localdev_service access key>
-AWS_SECRET_ACCESS_KEY=<casey_localdev_service secret key>
+AWS_ACCESS_KEY_ID=<service account access key>
+AWS_SECRET_ACCESS_KEY=<service account secret key>
 ```
 
-Or configure an AWS profile that uses those credentials and set `AWS_PROFILE=casey_localdev_service` (or whatever profile name you use for it).
+Or configure an AWS profile that uses the service account credentials and set `AWS_PROFILE` to that profile name.
+
+**Credentials separation:** Do not use the same credentials for Terraform and for the backend. Terraform should use admin credentials; the backend should use the service account credentials.
