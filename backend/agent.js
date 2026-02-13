@@ -306,7 +306,8 @@ async function streamTTS(text, sendAudioChunk, sendViseme, sendEnd) {
 }
 
 async function sendTestResponse(sendViseme, sendEnd) {
-  const VISEME_CODES = ['p', 't', 'S', 'i', 'u', 'a', '@', 'e', 'E', 'o'];
+  // Test sequence includes various AWS Polly viseme codes for compatibility testing
+  const VISEME_CODES = ['p', 't', 'S', 'i', 'u', 'a', '@', 'e', 'E', 'o', 'k', 'f', 'm', 'l', 's', 'b', 'd'];
   const durationMs = 2000;
   const intervalMs = 80;
   for (let t = 0; t < durationMs; t += intervalMs) {

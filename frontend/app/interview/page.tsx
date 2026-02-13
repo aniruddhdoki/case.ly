@@ -131,30 +131,100 @@ export default function Interview() {
     );
 }
 
-// Polly neural viseme codes -> avatar morph targets (matches AWS Polly viseme list)
+/**
+ * AWS Polly viseme codes -> avatar morph targets compatibility mapping
+ * 
+ * Maps all AWS Polly Neural viseme codes to corresponding avatar morph targets.
+ * Based on AWS Polly viseme documentation: https://docs.aws.amazon.com/polly/latest/dg/viseme.html
+ * 
+ * Mapping strategy:
+ * - Consonants with similar mouth shapes are grouped (e.g., p/b/f -> viseme_PP)
+ * - Vowels map to their closest phonetic viseme targets
+ * - Unmapped codes fall back to the closest similar viseme
+ */
 const corresponding: Record<string, string> = {
+    // Plosives (bilabial) - closed lips
     'p': 'viseme_PP',
-    't': 'viseme_DD',
-    'S': 'viseme_SH',
-    'i': 'viseme_IH',
-    'u': 'viseme_UH',
-    'a': 'viseme_AA',
-    '@': 'viseme_AE',
-    'e': 'viseme_EH',
-    'E': 'viseme_EY',
-    'o': 'viseme_OW',
-    // Additional Polly visemes for better lip-sync
-    'k': 'viseme_DD',
-    'f': 'viseme_PP',
-    's': 'viseme_SH',
-    'dZ': 'viseme_SH',
-    'tS': 'viseme_SH',
-    'd': 'viseme_DD',
     'b': 'viseme_PP',
+    
+    // Plosives (alveolar/dental) - tongue tip
+    't': 'viseme_DD',
+    'd': 'viseme_DD',
+    'k': 'viseme_DD',  // velar plosive, similar mouth shape
+    'g': 'viseme_DD',  // velar plosive
+    
+    // Fricatives (labiodental) - lip-teeth
+    'f': 'viseme_PP',  // similar to p/b but with teeth
+    'v': 'viseme_PP',  // voiced fricative
+    
+    // Fricatives (dental/interdental)
+    'th': 'viseme_DD',  // tongue between teeth
+    'TH': 'viseme_DD',  // voiced th
+    
+    // Fricatives (alveolar) - tongue tip
+    's': 'viseme_SH',
+    'z': 'viseme_SH',
+    
+    // Fricatives (post-alveolar/palatal) - tongue back
+    'S': 'viseme_SH',  // sh sound
+    'sh': 'viseme_SH',
+    'Z': 'viseme_SH',  // zh sound
+    
+    // Affricates (post-alveolar)
+    'tS': 'viseme_SH',  // ch sound
+    'ch': 'viseme_SH',
+    'dZ': 'viseme_SH',  // j sound
+    
+    // Nasals
+    'm': 'viseme_PP',  // bilabial nasal
+    'n': 'viseme_DD',  // alveolar nasal
+    'ng': 'viseme_DD', // velar nasal
+    
+    // Liquids
+    'l': 'viseme_DD',  // lateral approximant
+    'r': 'viseme_DD',  // alveolar approximant
+    
+    // Glides/semivowels
+    'w': 'viseme_UH',  // rounded lips
+    'y': 'viseme_IH',  // palatal approximant
+    
+    // Glottal
+    'hh': 'viseme_EH', // h sound, neutral mouth
+    
+    // Vowels - Close front
+    'i': 'viseme_IH',  // close front unrounded
+    'I': 'viseme_IH',  // near-close near-front
+    
+    // Vowels - Close-mid front
+    'e': 'viseme_EH',  // close-mid front unrounded
+    'E': 'viseme_EY',  // close-mid front unrounded (diphthong)
+    
+    // Vowels - Open-mid front
+    '@': 'viseme_AE',  // near-open front unrounded
+    '^': 'viseme_AE',  // open-mid central
+    
+    // Vowels - Open front
+    'a': 'viseme_AA',  // open front unrounded
+    'A': 'viseme_AA',  // open back unrounded
+    
+    // Vowels - Open-mid back
+    'O': 'viseme_OW',  // open-mid back rounded
+    
+    // Vowels - Close-mid back
+    'o': 'viseme_OW',  // close-mid back rounded
+    
+    // Vowels - Close back
+    'u': 'viseme_UH',  // close back rounded
+    'U': 'viseme_UH',  // near-close near-back
+    
+    // Silence/rest
+    'sil': 'viseme_PP',  // neutral position
+    '': 'viseme_PP',     // empty/rest
 };
 
 const VISEME_TEST_ENABLED = false;  // Set true to run looping viseme test sequence.
-const VISEME_TEST_SEQUENCE = ['a', 'i', 'u', 'e', 'o', 'p', 't', 'S'];
+// Test sequence includes various viseme types: vowels, plosives, fricatives
+const VISEME_TEST_SEQUENCE = ['a', 'i', 'u', 'e', 'o', 'p', 't', 'S', 'k', 'f', 'm', 'l'];
 const VISEME_STEP_DURATION = 0.4;
 
 function findMeshByName(root: Object3D, pattern: RegExp, exclude?: RegExp): SkinnedMesh | null {
@@ -357,8 +427,16 @@ function Avatar(
                 const startTime = viseme.time;
                 const endTime = speechMarksData[i + 1] ? speechMarksData[i + 1].time : durationMs;
                 if (currentAudioTimeMs >= startTime && currentAudioTimeMs < endTime) {
-                    const morphTargetName = corresponding[viseme.value];
-                    if (morphTargetName) applyViseme(morphTargetName, 1);
+                    const visemeCode = viseme.value;
+                    const morphTargetName = corresponding[visemeCode];
+                    if (morphTargetName) {
+                        applyViseme(morphTargetName, 1);
+                    } else {
+                        // Fallback: log unmapped viseme code and use neutral position
+                        console.warn(`[Avatar] Unmapped viseme code: "${visemeCode}". Using neutral position.`);
+                        // Use a neutral viseme as fallback (viseme_PP is typically neutral/closed)
+                        applyViseme('viseme_PP', 0.5);
+                    }
                     break;
                 }
             }
