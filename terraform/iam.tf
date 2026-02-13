@@ -38,7 +38,6 @@ resource "aws_iam_policy" "casey_backend" {
           "logs:DescribeLogGroups"
         ]
         Resource = "*"
-        Comment = "DescribeLogGroups requires broader scope when using prefix filters"
       },
       {
         Sid    = "CloudWatchLogsManage"
