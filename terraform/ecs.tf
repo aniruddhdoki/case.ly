@@ -112,15 +112,12 @@ resource "aws_security_group" "alb" {
     Environment = var.environment
     Service     = local.service_name
   }
-<<<<<<< HEAD
-=======
 
   lifecycle {
     # Ensure ECS security group updates before ALB security group is destroyed
     # This prevents DependencyViolation when switching from enable_alb=true to false
     create_before_destroy = false
   }
->>>>>>> 2ab0b46eee6426d1027793efbe901becab53ff6c
 }
 
 resource "aws_security_group" "ecs" {
