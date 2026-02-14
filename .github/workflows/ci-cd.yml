@@ -122,10 +122,24 @@ jobs:
         working-directory: ./terraform
         id: terraform-outputs
         run: |
-          echo "ecr_repo_url=$(terraform output -raw ecr_repository_url)" >> $GITHUB_OUTPUT
-          echo "ecs_cluster=$(terraform output -raw ecs_cluster_name)" >> $GITHUB_OUTPUT
-          echo "ecs_service=$(terraform output -raw ecs_service_name)" >> $GITHUB_OUTPUT
-          echo "aws_region=$(terraform output -raw aws_region)" >> $GITHUB_OUTPUT
+          # Get outputs (will fail if resources don't exist, which is expected on first run)
+          ECR_REPO_URL=$(terraform output -raw ecr_repository_url 2>/dev/null || echo "")
+          ECS_CLUSTER=$(terraform output -raw ecs_cluster_name 2>/dev/null || echo "")
+          ECS_SERVICE=$(terraform output -raw ecs_service_name 2>/dev/null || echo "")
+          AWS_REGION_OUT=$(terraform output -raw aws_region 2>/dev/null || echo "${{ env.AWS_REGION }}")
+          
+          if [ -z "$ECR_REPO_URL" ] || [ -z "$ECS_CLUSTER" ] || [ -z "$ECS_SERVICE" ]; then
+            echo "⚠️ Warning: Terraform outputs not available. Infrastructure may need to be created manually first."
+            echo "Run './deploy.sh' locally to create infrastructure, or ensure Terraform apply succeeded."
+            exit 1
+          fi
+          
+          echo "ecr_repo_url=$ECR_REPO_URL" >> $GITHUB_OUTPUT
+          echo "ecs_cluster=$ECS_CLUSTER" >> $GITHUB_OUTPUT
+          echo "ecs_service=$ECS_SERVICE" >> $GITHUB_OUTPUT
+          echo "aws_region=$AWS_REGION_OUT" >> $GITHUB_OUTPUT
+          
+          echo "✓ Terraform outputs retrieved"
 
       - name: Login to Amazon ECR
         id: login-ecr
